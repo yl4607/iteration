@@ -8,6 +8,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(rvest)
 library(readxl)
 library(patchwork)
 
@@ -31,7 +32,61 @@ scale_fill_discrete = scale_fill_viridis_d
 ```
 
 
-### Problem 1
+## Do something simple
 
-#### Data
+```{r}
+x_vec = rnorm(30, mean = 5, sd = 3)
+
+# z score
+(x_vec - mean(x_vec)) / sd(x_vec)
+```
+
+I want a function to compute z-scores
+
+```{r}
+# naming the input x
+z_scores = function(x) {
+  
+  z = (x - mean(x)) / sd(x)
+  
+  return(z)
+  
+}
+
+z_scores(x_vec)
+```
+
+Try my function on some othher things 
+
+```{r error=TRUE}
+z_scores(3) #NA
+z_scores("my name is jeff") #Error
+z_scores(mtcars) #Error
+z_scores(c(TRUE, TRUE, FALSE, TRUE)) # 0.5  0.5 -1.5  0.5
+```
+
+update the function
+
+```{r}
+z_scores = function(x) {
+  
+  if (!is.numeric(x)) {
+    stop("Input must be numeric")
+  }
+  
+  if (length(x) < 3){
+    stop("Input must have at least three numbers ")
+  }
+  
+  z = (x - mean(x)) / sd(x)
+  
+  return(z)
+  
+}
+```
+
+```{r error=TRUE}
+z_scores(3) # Error in z_scores(3) : Input must have at least three numbers 
+z_scores("my name is jeff") # Error in z_scores("my name is jeff") : Input must be numeric
+```
 
