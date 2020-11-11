@@ -28,7 +28,7 @@ sim_mean_sd(30)
     ## # A tibble: 1 x 2
     ##    mean    sd
     ##   <dbl> <dbl>
-    ## 1  4.29  4.45
+    ## 1  3.33  3.70
 
 ## Let’s simulate a lot
 
@@ -49,16 +49,16 @@ bind_rows(output)
     ## # A tibble: 100 x 2
     ##     mean    sd
     ##    <dbl> <dbl>
-    ##  1  3.35  4.23
-    ##  2  3.86  4.03
-    ##  3  3.78  4.61
-    ##  4  2.85  3.43
-    ##  5  2.74  4.01
-    ##  6  3.12  3.95
-    ##  7  3.77  4.46
-    ##  8  4.55  4.72
-    ##  9  2.45  3.47
-    ## 10  3.61  3.78
+    ##  1  3.53  3.18
+    ##  2  3.44  3.84
+    ##  3  3.45  3.53
+    ##  4  1.68  3.69
+    ##  5  3.95  4.22
+    ##  6  3.27  4.34
+    ##  7  2.05  4.05
+    ##  8  3.10  3.72
+    ##  9  3.55  4.11
+    ## 10  3.87  3.79
     ## # … with 90 more rows
 
 Lets’s use a loop function
@@ -97,4 +97,83 @@ sim_results %>%
     ## # A tibble: 1 x 2
     ##   avg_samp_mean sd_samp_mean
     ##           <dbl>        <dbl>
-    ## 1          3.01        0.859
+    ## 1          2.98        0.756
+
+## Let’s try other sample sizes
+
+``` r
+n_list = 
+  list(
+    "n = 30" = 30,
+    "n = 60" = 60,
+    "n = 120" = 120,
+    "n = 240" = 240
+  )
+
+output = vector("list", length = 4)
+
+output[[1]] = rerun(100, sim_mean_sd(samp_size = n_list[[1]])) %>% bind_rows()
+output[[2]] = rerun(100, sim_mean_sd(samp_size = n_list[[2]])) %>% bind_rows()
+
+for (i in 1:4) {
+  
+  output[[i]] = 
+    rerun(100, sim_mean_sd(samp_size = n_list[[i]])) %>% 
+    bind_rows()
+
+}
+```
+
+``` r
+# cache = TRUE
+sim_results = 
+  tibble(
+    sample_size = c(30, 60, 120, 240)
+  ) %>% 
+  mutate(
+    output_lists = map(.x = sample_size, ~rerun(100, sim_mean_sd(.x))),
+    estimate_df = map(output_lists, bind_rows)
+    )  %>%  # pull(estimate_df)
+  select(-output_lists) %>% 
+  unnest(estimate_df)
+
+# to be explicit
+# .x is the first element to be mapped
+```
+
+Do some data frame things.
+
+``` r
+sim_results %>% 
+  mutate(
+    sample_size = str_c("n = ", sample_size),
+    sample_size = fct_inorder(sample_size)
+  ) %>% 
+  ggplot(aes(x = sample_size, y = mean)) +
+  geom_violin()
+```
+
+<img src="simulation_files/figure-gfm/unnamed-chunk-8-1.png" width="90%" />
+
+``` r
+# inorder = it's already in the order
+```
+
+``` r
+sim_results %>% 
+  group_by(sample_size) %>% 
+  summarize(
+    avg_samp_mean = mean(mean),
+    sd_samp_mean = sd(mean)
+  )
+```
+
+    ## `summarise()` ungrouping output (override with `.groups` argument)
+
+    ## # A tibble: 4 x 3
+    ##   sample_size avg_samp_mean sd_samp_mean
+    ##         <dbl>         <dbl>        <dbl>
+    ## 1          30          3.01        0.758
+    ## 2          60          2.93        0.479
+    ## 3         120          3.04        0.355
+    ## 4         240          2.98        0.219
